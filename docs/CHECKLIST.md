@@ -56,24 +56,20 @@
 
 ---
 
-## Phase 4. PHP 서버 로직 (OpenAI API 연동)
+## Phase 4. PHP 서버 로직 (OpenAI API 연동) ✅
 
-- [ ] `.env` 파일에서 API 키 읽어오기
-  ```php
-  $apiKey = getenv('OPENAI_API_KEY');
-  ```
-- [ ] POST 요청으로 업로드된 이미지 수신 처리 (`$_FILES`)
-- [ ] 이미지를 **Base64**로 인코딩
-  ```php
-  $base64 = base64_encode(file_get_contents($tmpPath));
-  ```
-- [ ] OpenAI API 요청 JSON Payload 생성
-  - [ ] system 프롬프트 작성 (JSON 형식 응답 요청, 한국어, 긍정적 톤)
-  - [ ] user 메시지에 이미지 데이터 포함
-- [ ] `cURL`로 OpenAI API 호출 (`https://api.openai.com/v1/chat/completions`)
-- [ ] API 응답 JSON 디코딩 및 파싱
-  - [ ] `score` 값 추출
-  - [ ] `advice` 배열 추출
+- [x] `.env` 파일에서 API 키 읽어오기 ✅ (직접 파싱, Composer 불필요)
+- [x] POST 요청으로 업로드된 이미지 수신 처리 ✅ (`$_FILES` + 서버 사이드 이중 검증)
+- [x] 이미지를 **Base64**로 인코딩 ✅
+- [x] OpenAI API 요청 JSON Payload 생성 ✅
+  - [x] system 프롬프트 작성 ✅ (JSON 형식 응답 요청, 한국어, 긍정적 톤)
+  - [x] user 메시지에 이미지 데이터 포함 ✅ (`detail: low` 토큰 절약)
+- [x] `cURL`로 OpenAI API 호출 ✅ (타임아웃 30초, 연결 10초)
+- [x] API 응답 JSON 디코딩 및 파싱 ✅
+  - [x] `score` 값 추출 ✅ (0~100 범위 클램핑)
+  - [x] `advice` 배열 추출 ✅ (최대 2개 슬라이싱)
+- [x] 마크다운 코드블록 제거 처리 ✅ (AI가 ```json ... ``` 로 감쌀 때 대비)
+- [x] JS `fetch()` AJAX 전송으로 교체 ✅ (로딩 UI와 완전 연동)
 
 ---
 

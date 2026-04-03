@@ -1,3 +1,138 @@
+<?php
+/* ══════════════════════════════════════════
+   Phase 4: OpenAI API 서버 로직 (POST 요청 처리)
+══════════════════════════════════════════ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+
+    // ── 1. .env 파일에서 API 키 로드
+    $apiKey = '';
+    $envPath = __DIR__ . '/.env';
+    if (file_exists($envPath)) {
+        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue;
+            if (strpos($line, '=') !== false) {
+                [$k, $v] = explode('=', $line, 2);
+                if (trim($k) === 'OPENAI_API_KEY') {
+                    $apiKey = trim($v);
+                }
+            }
+        }
+    }
+
+    if (empty($apiKey)) {
+        echo json_encode(['error' => 'API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.']);
+        exit;
+    }
+
+    // ── 2. 업로드 파일 유효성 체크
+    if (!isset($_FILES['room_image']) || $_FILES['room_image']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['error' => '이미지 업로드에 실패했습니다. 다시 시도해주세요.']);
+        exit;
+    }
+
+    $file    = $_FILES['room_image'];
+    $tmpPath = $file['tmp_name'];
+    $mime    = mime_content_type($tmpPath);
+    $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+    if (!in_array($mime, $allowed)) {
+        echo json_encode(['error' => '허용되지 않는 파일 형식입니다.']);
+        exit;
+    }
+    if ($file['size'] > 5 * 1024 * 1024) {
+        echo json_encode(['error' => '파일 크기가 5MB를 초과합니다.']);
+        exit;
+    }
+
+    // ── 3. 이미지 Base64 인코딩
+    $base64  = base64_encode(file_get_contents($tmpPath));
+    $dataUrl = "data:{$mime};base64,{$base64}";
+
+    // ── 4. OpenAI API Payload 생성
+    $systemPrompt = '당신은 한국의 풍수지리 전문가입니다. '
+        . '사용자가 업로드한 방 사진을 분석하여 아래 JSON '
+        . '형식으로만 응답하세요. 다른 텍스트 없이 JSON만 출력하세요. '
+        . '응답 언어는 반드시 한국어, 톤은 즐겁고 긴정감 있게: '
+        . '{"score": (0~100 사이의 정수), "advice": ["조언 1", "조언 2"]}';
+
+    $payload = [
+        'model'      => 'gpt-4o',
+        'max_tokens' => 512,
+        'messages'   => [
+            ['role' => 'system', 'content' => $systemPrompt],
+            [
+                'role'    => 'user',
+                'content' => [
+                    [
+                        'type'      => 'image_url',
+                        'image_url' => ['url' => $dataUrl, 'detail' => 'low'],
+                    ],
+                    [
+                        'type' => 'text',
+                        'text' => '이 방의 풍수지리를 분석해주세요.',
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    // ── 5. cURL로 OpenAI API 호출
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ],
+        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_CONNECTTIMEOUT => 10,
+    ]);
+
+    $response  = curl_exec($ch);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) {
+        error_log('[lucky-room] cURL Error: ' . $curlError);
+        echo json_encode(['error' => 'API 서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.']);
+        exit;
+    }
+
+    // ── 6. 응답 JSON 파싱
+    $apiData = json_decode($response, true);
+
+    if (!isset($apiData['choices'][0]['message']['content'])) {
+        error_log('[lucky-room] API 오류: ' . $response);
+        echo json_encode(['error' => 'AI 응답을 받지 못했습니다. 다시 시도해주세요.']);
+        exit;
+    }
+
+    $content = $apiData['choices'][0]['message']['content'];
+
+    // 마크다운 코드 블록 제거 (AI가 ```json ... ``` 로 감슜 때 대비)
+    $content = preg_replace('/```json\s*/i', '', $content);
+    $content = preg_replace('/```\s*/i', '', $content);
+    $content = trim($content);
+
+    $result = json_decode($content, true);
+
+    if (!isset($result['score']) || !isset($result['advice']) || !is_array($result['advice'])) {
+        error_log('[lucky-room] 파싱 실패 - content: ' . $content);
+        echo json_encode(['error' => '분석 결과를 처리하는 중 오류가 발생했습니다. 다시 시도해주세요.']);
+        exit;
+    }
+
+    echo json_encode([
+        'score'  => max(0, min(100, (int)$result['score'])),
+        'advice' => array_slice(array_values($result['advice']), 0, 2),
+    ]);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -570,15 +705,35 @@ uploadZone.addEventListener('drop', e => {
   }
 });
 
-// ── 폼 submit 최종 검사 (Phase 3~4에서 실제 전송 로직 추가 예정)
+// ── 폼 submit → fetch()로 OpenAI API 호출 (Phase 4)
 document.getElementById('analysis-form').addEventListener('submit', function (e) {
   e.preventDefault();
   const file = inputFile.files[0];
   if (!validateFile(file)) return;
 
-  // ── Phase 3: 로딩 시작
   showLoading();
-  // TODO Phase 4: API 호출 후 hideLoading() 호출 예정
+
+  const formData = new FormData();
+  formData.append('room_image', file);
+
+  fetch('index.php', { method: 'POST', body: formData })
+    .then(res => {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(data => {
+      hideLoading();
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+      showResult(data);  // Phase 5에서 구현
+    })
+    .catch(err => {
+      hideLoading();
+      showError('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+      console.error('[lucky-room] fetch error:', err);
+    });
 });
 
 /* ══════════════════════════════════════════
