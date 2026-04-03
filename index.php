@@ -811,11 +811,15 @@ function showResult(data) {
   const { score, advice } = data;
 
   // ── 점수 채우기 (0에서 카운트업)
-  animateScore(score);
-
-  // ── 에모지 + 점수 라벨 업데이트
-  const scoreLabel = document.querySelector('.score-label');
-  scoreLabel.textContent = getScoreEmoji(score) + ' 풍수 에너지 지수 (100점 만점)';
+  if (score === 0) {
+      document.getElementById('score-number').textContent = 'X';
+      document.querySelector('.score-label').textContent = '⚠️ 풍수지리 분석 불가';
+  } else {
+      animateScore(score);
+      // ── 에모지 + 점수 라벨 업데이트
+      const scoreLabel = document.querySelector('.score-label');
+      scoreLabel.textContent = getScoreEmoji(score) + ' 풍수 에너지 지수 (100점 만점)';
+  }
 
   // ── 조언 채우기
   const adviceIcons = ['🌿', '💰', '🏠', '⚡', '✨'];
@@ -825,7 +829,9 @@ function showResult(data) {
       advEl.textContent = text;
       // 아이콘 동적 바꿈
       const iconEl = advEl.closest('.advice-item')?.querySelector('.advice-icon');
-      if (iconEl) iconEl.textContent = adviceIcons[i % adviceIcons.length];
+      if (iconEl) {
+          iconEl.textContent = score === 0 ? '❌' : adviceIcons[i % adviceIcons.length];
+      }
     }
   });
 
