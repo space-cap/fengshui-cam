@@ -8,16 +8,16 @@
 
 ## Phase 0. 환경 설정 (코딩 시작 전)
 
-- [ ] `.env` 파일에 OpenAI API 키 입력
+- [x] `.env` 파일에 OpenAI API 키 입력 ✅
   ```
   OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
   ```
-- [ ] `.env` 파일이 `.gitignore`에 포함되어 있는지 확인
-- [ ] PHP에서 `cURL` 확장이 활성화되어 있는지 확인
+- [x] `.env` 파일이 `.gitignore`에 포함되어 있는지 확인 ✅
+- [x] PHP에서 `cURL` 확장이 활성화되어 있는지 확인 ✅ (PHP 8.3.6, cURL 활성화됨)
   ```bash
   php -m | grep curl
   ```
-- [ ] 웹 서버(Apache/Nginx)에서 `index.php`가 정상 동작하는지 확인
+- [x] 웹 서버(Apache)에서 정상 동작 확인 ✅ (DocumentRoot: /var/www/html/bbb → http://localhost/)
 
 ---
 
