@@ -28,7 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ── 2. 업로드 파일 유효성 체크
     if (!isset($_FILES['room_image']) || $_FILES['room_image']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['error' => '이미지 업로드에 실패했습니다. 다시 시도해주세요.']);
+        $errCode = isset($_FILES['room_image']) ? $_FILES['room_image']['error'] : 'NO_FILE';
+        
+        $errorMsg = '이미지 업로드에 실패했습니다. 다시 시도해주세요.';
+        if ($errCode === UPLOAD_ERR_INI_SIZE) {
+            $errorMsg = '사진 용량이 너무 큽니다. (PHP 서버의 업로드 제한 초과)';
+        }
+        echo json_encode(['error' => $errorMsg . ' (에러코드: ' . $errCode . ')']);
         exit;
     }
 
