@@ -54,8 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $systemPrompt = '당신은 한국의 풍수지리 전문가입니다. '
         . '사용자가 업로드한 방 사진을 분석하여 아래 JSON '
         . '형식으로만 응답하세요. 다른 텍스트 없이 JSON만 출력하세요. '
-        . '응답 언어는 반드시 한국어, 톤은 즐겁고 긴정감 있게: '
-        . '{"score": (0~100 사이의 정수), "advice": ["조언 1", "조언 2"]}';
+        . '응답 언어는 반드시 한국어, 톤은 긍정적이고 재미있게 작성하세요. '
+        . '중요: 만약 업로드된 사진이 방이나 실내 공간의 사진이 아니라면(예: 문서, 사람만 있는 사진, 풍경 등). '
+        . 'score를 0으로 주고 advice의 첫 번째 항목에 문제 원인을 알려주세요. '
+        . '예외 포맷: {"score": 0, "advice": ["풍수지리를 분석하기 어려운 사진입니다.", "방의 모습이 잘 보이는 사진을 올려주세요!"]} '
+        . '정상 포맷: {"score": (0~100 사이의 정수), "advice": ["조언 1", "조언 2"]}';
 
     $payload = [
         'model'      => 'gpt-4o',
@@ -389,10 +392,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       50%       { opacity: 0.5; }
     }
 
-    /* ── 결과 영역 (Phase 5에서 내용 채울 예정) ── */
+    /* ── 결과 영역 (Phase 5) ── */
     #result-area {
       display: none;
       margin-top: 1.5rem;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .result-card {
@@ -771,6 +780,64 @@ function hideLoading() {
   loadingArea.style.display = 'none';
   document.getElementById('analysis-form').style.display = 'block';
   btnAnalyze.disabled = false;
+}
+
+/* ══════════════════════════════════════════
+   Phase 5: 결과 출력 UI
+══════════════════════════════════════════ */
+
+// 점수별 표정 이모지
+function getScoreEmoji(score) {
+  if (score >= 85) return '🌟';  // 대길
+  if (score >= 70) return '✨';   // 좋음
+  if (score >= 50) return '🌿';  // 보통
+  if (score >= 30) return '🔮';  // 주의
+  return '🌀';                  // 객정
+}
+
+// 점수 카운터 애니메이션
+function animateScore(targetScore) {
+  const el = document.getElementById('score-number');
+  let current = 0;
+  const step = Math.ceil(targetScore / 40); // ~40 프레임
+  const timer = setInterval(() => {
+    current = Math.min(current + step, targetScore);
+    el.textContent = current;
+    if (current >= targetScore) clearInterval(timer);
+  }, 30);
+}
+
+function showResult(data) {
+  const { score, advice } = data;
+
+  // ── 점수 채우기 (0에서 카운트업)
+  animateScore(score);
+
+  // ── 에모지 + 점수 라벨 업데이트
+  const scoreLabel = document.querySelector('.score-label');
+  scoreLabel.textContent = getScoreEmoji(score) + ' 풍수 에너지 지수 (100점 만점)';
+
+  // ── 조언 채우기
+  const adviceIcons = ['🌿', '💰', '🏠', '⚡', '✨'];
+  advice.forEach((text, i) => {
+    const advEl = document.getElementById('advice-' + (i + 1));
+    if (advEl) {
+      advEl.textContent = text;
+      // 아이콘 동적 바꿈
+      const iconEl = advEl.closest('.advice-item')?.querySelector('.advice-icon');
+      if (iconEl) iconEl.textContent = adviceIcons[i % adviceIcons.length];
+    }
+  });
+
+  // ── 결과 영역 표시
+  resultArea.style.display = 'block';
+  // 리에램더를 개시하여 애니메이션 구동
+  void resultArea.offsetWidth;
+
+  // ── 모바일 UX: 결과로 부드럽게 스크롤
+  setTimeout(() => {
+    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 </script>
 
