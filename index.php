@@ -121,7 +121,7 @@
       background: var(--color-border);
     }
 
-    /* ── 업로드 영역 (Phase 2에서 기능 추가 예정) ── */
+    /* ── 업로드 영역 ── */
     .upload-zone {
       border: 2px dashed var(--color-border);
       border-radius: 1.25rem;
@@ -323,6 +323,18 @@
       margin-top: 1rem;
       font-size: 0.88rem;
       color: #e74c3c;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* ── 업로드 에러 상태 ── */
+    .upload-zone.error {
+      border-color: rgba(192,57,43,0.6);
+      background: rgba(192,57,43,0.05);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     /* ── 푸터 ── */
@@ -375,7 +387,7 @@
           <input type="file"
                  id="room-image"
                  name="room_image"
-                 accept="image/*"
+                 accept="image/jpeg,image/png,image/webp,image/gif"
                  style="position:absolute;inset:0;opacity:0;cursor:pointer;"
                  aria-label="방 사진 업로드">
         </div>
@@ -449,52 +461,162 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-/* ──────────────────────────────────────────
-   Phase 1: 기본 UI 인터랙션
-   (Phase 2에서 유효성 검사 / 업로드 기능 추가 예정)
-────────────────────────────────────────── */
-const inputFile   = document.getElementById('room-image');
-const uploadZone  = document.getElementById('upload-zone');
-const previewWrap = document.getElementById('preview-wrap');
-const previewImg  = document.getElementById('preview-img');
-const btnAnalyze  = document.getElementById('btn-analyze');
-const clearBtn    = document.getElementById('preview-clear');
+/* ══════════════════════════════════════════
+   Phase 2: 이미지 업로드 유효성 검사
+   Phase 3: 로딩 UI 제어
+══════════════════════════════════════════ */
+const inputFile    = document.getElementById('room-image');
+const uploadZone   = document.getElementById('upload-zone');
+const previewWrap  = document.getElementById('preview-wrap');
+const previewImg   = document.getElementById('preview-img');
+const btnAnalyze   = document.getElementById('btn-analyze');
+const clearBtn     = document.getElementById('preview-clear');
+const errorArea    = document.getElementById('error-area');
+const errorMsg     = document.getElementById('error-msg');
+const loadingArea  = document.getElementById('loading-area');
+const resultArea   = document.getElementById('result-area');
 
-// 파일 선택 시 미리보기
-inputFile.addEventListener('change', function () {
-  const file = this.files[0];
-  if (!file) return;
+const MAX_SIZE_MB  = 5;
+const MAX_SIZE_B   = MAX_SIZE_MB * 1024 * 1024;
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-  const reader = new FileReader();
-  reader.onload = e => {
-    previewImg.src = e.target.result;
-    previewWrap.style.display = 'block';
-    uploadZone.style.display = 'none';
-    btnAnalyze.disabled = false;
-  };
-  reader.readAsDataURL(file);
-});
+/** 에러 표시 */
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorArea.style.display = 'block';
+  uploadZone.classList.add('error');
+  btnAnalyze.disabled = true;
+}
 
-// 미리보기 제거
-clearBtn.addEventListener('click', function () {
+/** 에러 초기화 */
+function clearError() {
+  errorArea.style.display = 'none';
+  uploadZone.classList.remove('error');
+}
+
+/** 미리보기 초기화 */
+function resetUpload() {
   inputFile.value = '';
   previewImg.src  = '';
   previewWrap.style.display = 'none';
   uploadZone.style.display  = 'block';
   btnAnalyze.disabled = true;
+  clearError();
+}
+
+/** 파일 유효성 검사 */
+function validateFile(file) {
+  if (!file) {
+    showError('사진을 먼저 선택해주세요.');
+    return false;
+  }
+  if (!ALLOWED_MIME.includes(file.type)) {
+    showError('이미지 파일만 업로드 가능합니다. (JPG, PNG, WEBP, GIF)');
+    return false;
+  }
+  if (file.size > MAX_SIZE_B) {
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+    showError(`파일 크기가 너무 큽니다. (${sizeMB}MB) 최대 ${MAX_SIZE_MB}MB 이하만 가능합니다.`);
+    return false;
+  }
+  return true;
+}
+
+/** 파일 선택 → 유효성 검사 → 미리보기 */
+function handleFile(file) {
+  clearError();
+  if (!validateFile(file)) {
+    resetUpload();
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    previewImg.src = e.target.result;
+    previewWrap.style.display = 'block';
+    uploadZone.style.display  = 'none';
+    btnAnalyze.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── 파일 input change 이벤트
+inputFile.addEventListener('change', function () {
+  const file = this.files[0];
+  if (file) handleFile(file);
 });
 
-// 드래그 앤 드롭 시각 효과
-uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+// ── 미리보기 제거 버튼
+clearBtn.addEventListener('click', resetUpload);
+
+// ── 드래그 앤 드롭
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('dragover');
+});
+uploadZone.addEventListener('dragleave', () => {
+  uploadZone.classList.remove('dragover');
+});
 uploadZone.addEventListener('drop', e => {
   e.preventDefault();
   uploadZone.classList.remove('dragover');
-  if (e.dataTransfer.files.length) {
-    inputFile.files = e.dataTransfer.files;
-    inputFile.dispatchEvent(new Event('change'));
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    // DataTransfer로 받은 파일을 input에도 세팅
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    inputFile.files = dt.files;
+    handleFile(file);
   }
 });
+
+// ── 폼 submit 최종 검사 (Phase 3~4에서 실제 전송 로직 추가 예정)
+document.getElementById('analysis-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const file = inputFile.files[0];
+  if (!validateFile(file)) return;
+
+  // ── Phase 3: 로딩 시작
+  showLoading();
+  // TODO Phase 4: API 호출 후 hideLoading() 호출 예정
+});
+
+/* ══════════════════════════════════════════
+   Phase 3: 로딩 UI 제어 함수
+══════════════════════════════════════════ */
+
+// 로딩 메시지 순환 (지루하지 않게 😄)
+const LOADING_MESSAGES = [
+  'AI가 기운을 살피는 중입니다...',
+  '방의 에너지 흐름을 분석하고 있어요...',
+  '풍수지리 데이터를 계산 중입니다...',
+  '행운의 방향을 찾는 중이에요...',
+];
+let loadingTimer = null;
+
+function showLoading() {
+  clearError();
+  // 폼 숨기고 로딩 표시
+  document.getElementById('analysis-form').style.display = 'none';
+  loadingArea.style.display = 'block';
+  resultArea.style.display  = 'none';
+
+  // 로딩 메시지 순환
+  let idx = 0;
+  const textEl = loadingArea.querySelector('.loading-text');
+  textEl.textContent = LOADING_MESSAGES[0];
+  loadingTimer = setInterval(() => {
+    idx = (idx + 1) % LOADING_MESSAGES.length;
+    textEl.textContent = LOADING_MESSAGES[idx];
+  }, 2000);
+}
+
+function hideLoading() {
+  clearInterval(loadingTimer);
+  loadingArea.style.display = 'none';
+  document.getElementById('analysis-form').style.display = 'block';
+  btnAnalyze.disabled = false;
+}
 </script>
 
 </body>
