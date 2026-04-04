@@ -35,10 +35,10 @@
 
 ## 🛠️ 기술 스택
 
-- **Frontend**: HTML5, Vanilla JavaScript, Bootstrap 5
-- **Backend**: PHP 8.x (단일 `index.php` — 뷰와 서버 로직 통합)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript, Bootstrap 5
+- **Backend**: PHP 8.x
 - **AI API**: OpenAI API (`gpt-4o` Vision)
-- **통신**: PHP `cURL`을 이용한 REST API 호출
+- **통신**: 프론트엔드 `fetch` API 및 내부 `api.php`의 `cURL` 통신
 
 ---
 
@@ -46,11 +46,16 @@
 
 ```
 lucky-room/
-├── index.php          # 메인 애플리케이션 (뷰 + 서버 로직)
-├── .env               # 환경 변수 (API 키) ← Git 제외
+├── index.php          # HTML 뷰 (메인 UI)
+├── api.php            # PHP 서버 로직 (API 라우터 및 OpenAI 통신 등)
+├── app.js             # 클라이언트 스크립트 (파일 압축, 화면 조작, 비동기 통신)
+├── style.css          # 디자인 시스템 및 테마 스타일
+├── data/              # 런타임 데이터 (Rate Limiting JSON 등 저장)
+│   └── .htaccess      # 데이터 폴더 접근 통제용 보안 파일
+├── .env               # 환경 변수 (API 키 및 Daily Rate Limit 설정) ← Git 제외
 ├── .env.example       # 환경 변수 예시 파일
 ├── .gitignore         # Git 제외 목록
-├── .htaccess          # Apache 설정
+├── .htaccess          # 루트 디렉토리 Apache 설정
 └── docs/
     ├── PRD.md         # 제품 요구사항 정의서
     └── CHECKLIST.md   # 개발 체크리스트
@@ -264,26 +269,30 @@ npx --yes cloudflared tunnel --url http://localhost:80
 
 ```
 [Client (Mobile/PC 브라우저)]
-   |
-   | ① 파일 크기/형식 유효성 검사 (Client Side)
-   | ② Multipart Form 전송 (이미지)
+   |  - UI 생성 (index.php, style.css, app.js)
+   |  - 초기 로드 시 API(GET) 요청으로 잔여 횟수 표기
+   | ① 파일 용량/형식 사전 유효성 검사 및 브라우저 압축 처리
+   | ② FormData 비동기 전송 (fetch ➝ api.php)
    ↓
-[Web Server (PHP — index.php)]
+[Web Server (PHP — api.php)]
    |
+   |  - 업로드 파일 백엔드 2차 유효성 검증
+   |  - Rate Limiting 및 잔여 횟수 체크 (data/rate_limit.json)
    | ③ 이미지 Base64 인코딩
-   | ④ JSON Payload 생성 (프롬프트 + 이미지 데이터)
+   | ④ JSON Payload 생성 (프롬프트 설정 + 데이터 배열화)
    | ⑤ cURL 통신 / HTTPS
    ↓
 [OpenAI API Server (gpt-4o)]
    |
-   | ⑥ 이미지 분석 및 결과 JSON 반환
+   | ⑥ 이미지 분석 및 결과 JSON 응답
    ↓
-[Web Server (PHP — index.php)]
+[Web Server (PHP — api.php)]
    |
-   | ⑦ JSON 디코딩 및 HTML 렌더링
-   | ⑧ API 오류 발생 시 에러 처리
+   | ⑦ 분석 결과와 추가 데이터(잔여 횟수, 제한)를 JSON화 하여 반환
+   | ⑧ API 통신 오류 시 에러 JSON 응답
    ↓
 [Client (결과 화면 확인)]
+   |  - 응답 JSON 데이터 파싱 및 UI 업데이트 (스코어 애니메이션 및 남은 횟수 출력)
 ```
 
 ---
