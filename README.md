@@ -106,6 +106,92 @@ http://localhost/
 
 ---
 
+## 📱 외부 기기(핸드폰)에서 테스트하기
+
+로컬 서버를 외부 기기에서 접속하는 방법은 두 가지가 있습니다.
+
+### 방법 A. 같은 Wi-Fi 네트워크 (간단·빠름)
+
+PC와 폰이 **같은 Wi-Fi**에 연결되어 있을 때 사용하세요.
+
+**① 서버 PC의 로컬 IP 확인**
+
+```bash
+# WSL (Ubuntu) 환경에서 실행
+ip addr show eth0 | grep "inet " | awk '{print $2}' | cut -d/ -f1
+```
+
+> Windows PowerShell에서 확인하려면:
+> ```powershell
+> ipconfig
+> # "이더넷" 또는 "Wi-Fi" 항목의 IPv4 주소 확인 (예: 192.168.0.10)
+> ```
+
+**② 방화벽에서 80번 포트 허용 (Windows)**
+
+```powershell
+# PowerShell을 관리자 권한으로 실행
+netsh advfirewall firewall add rule name="Apache HTTP" dir=in action=allow protocol=TCP localport=80
+```
+
+**③ 폰 브라우저에서 접속**
+
+```
+http://192.168.0.10/
+```
+
+> [!NOTE]
+> IP 주소는 위 명령어로 확인한 실제 값으로 교체하세요. 공유기 환경에 따라 `192.168.x.x` 또는 `10.0.x.x` 대역일 수 있습니다.
+
+---
+
+### 방법 B. ngrok 터널링 (외부 네트워크·원격 테스트)
+
+PC와 폰이 **다른 네트워크**에 있거나, 인터넷을 통해 접속하고 싶을 때 사용하세요.
+
+**① ngrok 설치**
+
+```bash
+# Homebrew (macOS)
+brew install ngrok
+
+# Windows (Chocolatey)
+choco install ngrok
+
+# 또는 공식 사이트에서 직접 다운로드
+# https://ngrok.com/download
+```
+
+**② ngrok 계정 연결 (최초 1회)**
+
+[ngrok.com](https://ngrok.com) 에서 무료 계정 생성 후 토큰 인증:
+
+```bash
+ngrok config add-authtoken <YOUR_NGROK_TOKEN>
+```
+
+**③ 터널 시작**
+
+```bash
+ngrok http 80
+```
+
+**④ 출력된 HTTPS URL로 폰에서 접속**
+
+```
+Forwarding  https://abcd-1234.ngrok-free.app → http://localhost:80
+
+# 위 URL을 폰 브라우저에 입력하거나 QR코드로 공유
+```
+
+> [!CAUTION]
+> ngrok 무료 플랜은 세션마다 URL이 바뀝니다. 터널을 종료하면 URL도 만료됩니다.
+
+> [!WARNING]
+> ngrok URL은 인터넷에 공개되므로 테스트가 끝나면 반드시 터널을 종료하세요 (`Ctrl + C`).
+
+---
+
 ## 🔄 사용자 플로우
 
 ```
