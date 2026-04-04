@@ -194,31 +194,15 @@ Forwarding  https://abcd-1234.ngrok-free.app → http://localhost:80
 
 ### 방법 C. Cloudflare Tunnel (안정적·무료·HTTPS 자동)
 
-계정 가입 없이도 사용할 수 있는 **`cloudflared`** 임시 터널 기능을 활용합니다.
-ngrok과 달리 **별도 인증 없이 즉시 사용** 가능하고, Cloudflare CDN을 통해 안정적입니다.
+**설치 없이** `npx` 한 줄로 바로 실행할 수 있습니다.  
+ngrok과 달리 **계정·로그인 불필요**, Cloudflare CDN을 통해 빠르고 안정적입니다.
 
-**① cloudflared 설치**
-
-```bash
-# WSL (Ubuntu/Debian)
-curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
-sudo dpkg -i cloudflared.deb
-
-# Windows (Winget)
-winget install --id Cloudflare.cloudflared
-
-# Windows (Chocolatey)
-choco install cloudflared
-
-# 설치 확인
-cloudflared --version
-```
-
-**② 임시 터널 시작 (로그인 불필요)**
+**① 터널 시작 (설치 불필요, 즉시 실행)**
 
 ```bash
-cloudflared tunnel --url http://localhost:80
+npx --yes cloudflared tunnel --url http://localhost:80
 ```
+
 
 **③ 출력된 URL로 폰에서 접속**
 
