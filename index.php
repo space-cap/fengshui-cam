@@ -30,6 +30,8 @@
         사진 한 장을 올리면 AI가<br>
         풍수지리 점수와 인테리어 운세를 분석해드립니다
       </p>
+      <!-- 남은 횟수 뱃지 (분석 완료 후 JS로 업데이트) -->
+      <span id="remain-badge" class="remain-badge">오늘 무료 분석 5회 제공</span>
     </header>
 
     <!-- 메인 콘텐츠 -->

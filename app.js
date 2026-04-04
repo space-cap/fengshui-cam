@@ -20,17 +20,18 @@ const CONFIG = {
 };
 
 /* ── DOM 참조 ── */
-const inputFile   = document.getElementById('room-image');
-const uploadZone  = document.getElementById('upload-zone');
-const previewWrap = document.getElementById('preview-wrap');
-const previewImg  = document.getElementById('preview-img');
-const btnAnalyze  = document.getElementById('btn-analyze');
-const clearBtn    = document.getElementById('preview-clear');
-const errorArea   = document.getElementById('error-area');
-const errorMsg    = document.getElementById('error-msg');
-const loadingArea = document.getElementById('loading-area');
-const resultArea  = document.getElementById('result-area');
+const inputFile    = document.getElementById('room-image');
+const uploadZone   = document.getElementById('upload-zone');
+const previewWrap  = document.getElementById('preview-wrap');
+const previewImg   = document.getElementById('preview-img');
+const btnAnalyze   = document.getElementById('btn-analyze');
+const clearBtn     = document.getElementById('preview-clear');
+const errorArea    = document.getElementById('error-area');
+const errorMsg     = document.getElementById('error-msg');
+const loadingArea  = document.getElementById('loading-area');
+const resultArea   = document.getElementById('result-area');
 const analysisForm = document.getElementById('analysis-form');
+const remainBadge  = document.getElementById('remain-badge');  // 남은 횟수 표시
 
 /* ══════════════════════════════════════════
    에러 / 초기화 헬퍼
@@ -218,6 +219,18 @@ function showResult(data) {
 
   resultArea.style.display = 'block';
   void resultArea.offsetWidth; // 애니메이션 재시작 트리거
+
+  // 남은 횟수 업데이트
+  if (typeof data.remaining === 'number' && remainBadge) {
+    if (data.remaining === 0) {
+      remainBadge.textContent = '오늘의 무료 분석 5회를 모두 사용했습니다. 🌙 내일 다시 오세요!';
+      remainBadge.classList.add('remain-empty');
+      btnAnalyze.disabled = true;
+      btnAnalyze.textContent = '😴 오늘의 분석 종료 — 내일 다시 만나요';
+    } else {
+      remainBadge.textContent = `오늘 남은 무료 분석 횟수: ${data.remaining}회`;
+    }
+  }
 
   setTimeout(() => {
     resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });

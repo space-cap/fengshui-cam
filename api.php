@@ -12,6 +12,81 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 header('Content-Type: application/json; charset=utf-8');
 
+// ── 0-A. 실제 클라이언트 IP 추출 (Cloudflare / 프록시 환경 대응)
+function getRealIP(): string
+{
+  $headers = [
+    'HTTP_CF_CONNECTING_IP',   // Cloudflare Tunnel
+    'HTTP_X_FORWARDED_FOR',    // 일반 리버스 프록시
+    'HTTP_X_REAL_IP',
+    'REMOTE_ADDR',             // 직접 연결
+  ];
+  foreach ($headers as $h) {
+    if (!empty($_SERVER[$h])) {
+      // X-Forwarded-For 는 "IP1, IP2, ..." 형식일 수 있음 → 첫 번째 IP 사용
+      $ip = trim(explode(',', $_SERVER[$h])[0]);
+      if (filter_var($ip, FILTER_VALIDATE_IP)) {
+        return $ip;
+      }
+    }
+  }
+  return 'unknown';
+}
+
+// ── 0-B. IP 기반 하루 사용 횟수 제한 (회원가입 없이 5회)
+function checkRateLimit(string $ip, int $limit = 5): array
+{
+  $dataDir  = __DIR__ . '/data';
+  $filePath = $dataDir . '/rate_limit.json';
+  $today    = date('Y-m-d');
+
+  // data 디렉토리 없으면 생성
+  if (!is_dir($dataDir)) {
+    mkdir($dataDir, 0700, true);
+  }
+
+  // 파일 읽기 (없으면 빈 배열)
+  $fp = fopen($filePath, 'c+');
+  if (!$fp) {
+    // 파일 열기 실패 시 제한 없이 통과 (서버 문제로 사용자 차단하지 않음)
+    return ['allowed' => true, 'remaining' => $limit];
+  }
+
+  flock($fp, LOCK_EX); // 배타적 잠금 (동시 요청 안전)
+  $raw  = stream_get_contents($fp);
+  $data = $raw ? json_decode($raw, true) : [];
+
+  // 오늘 날짜 데이터만 유지 (어제 이전 데이터 자동 삭제)
+  if (!isset($data[$today])) {
+    $data = [$today => []];
+  }
+
+  $count = $data[$today][$ip] ?? 0;
+
+  if ($count >= $limit) {
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    return [
+      'allowed'   => false,
+      'remaining' => 0,
+      'reset_at'  => date('Y-m-d', strtotime('+1 day')) . ' 00:00',
+    ];
+  }
+
+  // 카운트 증가 후 저장
+  $data[$today][$ip] = $count + 1;
+  ftruncate($fp, 0);
+  rewind($fp);
+  fwrite($fp, json_encode($data));
+  flock($fp, LOCK_UN);
+  fclose($fp);
+
+  return [
+    'allowed'   => true,
+    'remaining' => $limit - ($count + 1),
+  ];
+}
+
 // ── 1. .env 파일에서 환경 변수 로드
 function loadEnv(string $path): array
 {
@@ -129,6 +204,16 @@ if (empty($apiKey)) {
 $uploadError = validateUpload($_FILES);
 if ($uploadError !== null) {
   echo json_encode(['error' => $uploadError]);
+  exit;
+}
+
+// Rate Limiting — IP당 하루 5회 제한
+$clientIp   = getRealIP();
+$rateResult = checkRateLimit($clientIp, 5);
+if (!$rateResult['allowed']) {
+  echo json_encode([
+    'error' => "오늘의 무료 분석 횟수(5회)를 모두 사용하셨습니다. 내일 {$rateResult['reset_at']}에 초기화됩니다. 🌙",
+  ]);
   exit;
 }
 

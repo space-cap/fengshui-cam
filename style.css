@@ -87,6 +87,25 @@ body::before {
   line-height: 1.6;
 }
 
+/* ── 남은 횟수 뱃지 ── */
+.remain-badge {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+  color: #fff;
+  background-color: var(--color-green);
+  border-radius: 999px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(39, 174, 96, 0.2);
+}
+
+.remain-badge.remain-empty {
+  background-color: var(--color-red);
+  box-shadow: 0 2px 10px rgba(192, 57, 43, 0.2);
+}
+
 /* ══════════════════════════════════════════
    메인 카드
 ══════════════════════════════════════════ */
