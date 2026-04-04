@@ -162,7 +162,7 @@ $systemPrompt =
 
 $payload = [
   'model'      => 'gpt-4o',
-  'max_tokens' => 1024,
+  'max_tokens' => 2000,
   'messages'   => [
     ['role' => 'system', 'content' => $systemPrompt],
     [
