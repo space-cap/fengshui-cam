@@ -222,13 +222,14 @@ function showResult(data) {
 
   // 남은 횟수 업데이트
   if (typeof data.remaining === 'number' && remainBadge) {
+    const limit = data.total_limit || 5; // 기본값 5
     if (data.remaining === 0) {
-      remainBadge.textContent = '오늘의 무료 분석 5회를 모두 사용했습니다. 🌙 내일 다시 오세요!';
+      remainBadge.textContent = `오늘의 무료 분석 ${limit}회를 모두 사용했습니다. 🌙 내일 다시 오세요!`;
       remainBadge.classList.add('remain-empty');
       btnAnalyze.disabled = true;
       btnAnalyze.textContent = '😴 오늘의 분석 종료 — 내일 다시 만나요';
     } else {
-      remainBadge.textContent = `오늘 남은 무료 분석 횟수: ${data.remaining}회`;
+      remainBadge.textContent = `오늘 남은 무료 분석 횟수: ${data.remaining}회 (총 ${limit}회)`;
     }
   }
 
@@ -298,5 +299,28 @@ analysisForm.addEventListener('submit', async function (e) {
     console.error('[lucky-room] fetch error:', err);
   } finally {
     hideLoading();
+  }
+});
+
+// 초기 로딩 시 남은 횟수 화면에 동기화
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch(CONFIG.API_ENDPOINT);
+    if (!res.ok) return;
+    const data = await res.json();
+    
+    if (typeof data.remaining === 'number' && remainBadge) {
+      const limit = data.total_limit || 5;
+      if (data.remaining === 0) {
+        remainBadge.textContent = `오늘의 무료 분석 ${limit}회를 모두 사용했습니다. 🌙 내일 다시 오세요!`;
+        remainBadge.classList.add('remain-empty');
+        btnAnalyze.disabled = true;
+        btnAnalyze.textContent = '😴 오늘의 분석 종료 — 내일 다시 만나요';
+      } else {
+        remainBadge.textContent = `오늘 남은 무료 분석 횟수: ${data.remaining}회 (총 ${limit}회)`;
+      }
+    }
+  } catch (err) {
+    console.error('[lucky-room] initial rate limit fetch error:', err);
   }
 });

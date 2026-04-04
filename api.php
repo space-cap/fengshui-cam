@@ -1,14 +1,8 @@
 <?php
 /* ══════════════════════════════════════════
    api.php — OpenAI API 서버 로직
-   역할: POST 요청 수신 → 이미지 분석 → JSON 응답
+   역할: POST 요청 (이미지 분석), GET 요청 (잔여 횟수 조회)
 ══════════════════════════════════════════ */
-
-// POST 요청이 아니면 접근 차단
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-  http_response_code(405);
-  exit('Method Not Allowed');
-}
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -194,6 +188,38 @@ function parseAIContent(string $content): array
 // API 키 로드
 $env = loadEnv(__DIR__ . '/.env');
 $apiKey = $env['OPENAI_API_KEY'] ?? '';
+$dailyLimit = isset($env['DAILY_LIMIT']) ? (int)$env['DAILY_LIMIT'] : 5;
+
+// Rate Limiting — IP당 하루 횟수 제한 (공통)
+$clientIp   = getRealIP();
+// GET 요청은 카운트를 증가시키지 않고 확인만 해야 하므로 checkRateLimit에 '조회 모드'가 필요하지만,
+// 간단히 파일 내용을 읽어오는 별도 로직을 작성합니다.
+$dataDir  = __DIR__ . '/data';
+$filePath = $dataDir . '/rate_limit.json';
+$today    = date('Y-m-d');
+$currentCount = 0;
+if (file_exists($filePath)) {
+    $raw = file_get_contents($filePath);
+    if ($raw) {
+        $rateData = json_decode($raw, true);
+        if (isset($rateData[$today][$clientIp])) {
+            $currentCount = $rateData[$today][$clientIp];
+        }
+    }
+}
+$remaining = max(0, $dailyLimit - $currentCount);
+
+// ── GET 요청: 잔여 횟수 반환용 ──
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    echo json_encode(['remaining' => $remaining, 'total_limit' => $dailyLimit]);
+    exit;
+}
+
+// ── POST 요청 통제 ──
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit('Method Not Allowed');
+}
 
 if (empty($apiKey)) {
   echo json_encode(['error' => 'API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.']);
@@ -207,12 +233,13 @@ if ($uploadError !== null) {
   exit;
 }
 
-// Rate Limiting — IP당 하루 5회 제한
-$clientIp   = getRealIP();
-$rateResult = checkRateLimit($clientIp, 5);
+// POST 요청 Rate Limiting 검사 (실제 횟수 차감)
+$rateResult = checkRateLimit($clientIp, $dailyLimit);
 if (!$rateResult['allowed']) {
   echo json_encode([
-    'error' => "오늘의 무료 분석 횟수(5회)를 모두 사용하셨습니다. 내일 {$rateResult['reset_at']}에 초기화됩니다. 🌙",
+    'error' => "오늘의 무료 분석 횟수({$dailyLimit}회)를 모두 사용하셨습니다. 내일 {$rateResult['reset_at']}에 초기화됩니다. 🌙",
+    'remaining' => 0,
+    'total_limit' => $dailyLimit
   ]);
   exit;
 }
@@ -277,4 +304,6 @@ if (isset($apiResult['error'])) {
 
 // 응답 파싱 후 최종 출력
 $output = parseAIContent($apiResult['content']);
+$output['remaining'] = $rateResult['remaining']; // 남은 횟수 프론트엔드 전달
+$output['total_limit'] = $dailyLimit; // 총 한도 프론트엔드 전달
 echo json_encode($output);
