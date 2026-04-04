@@ -1,0 +1,382 @@
+/* ══════════════════════════════════════════
+   style.css — Lucky Room 디자인 시스템
+══════════════════════════════════════════ */
+
+/* ── 디자인 토큰 ── */
+:root {
+  --color-bg: #0f0e17;
+  --color-surface: #1a1830;
+  --color-card: #22203a;
+  --color-gold: #c9a84c;
+  --color-gold-light: #e8c96b;
+  --color-red: #c0392b;
+  --color-green: #27ae60;
+  --color-text: #e8e6f0;
+  --color-muted: #8b89a0;
+  --color-border: rgba(201, 168, 76, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ── 기본 레이아웃 ── */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── 배경 그라디언트 패턴 ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201, 168, 76, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(192, 57, 43, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-wrap {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════════
+   헤더
+══════════════════════════════════════════ */
+.site-header {
+  padding: 2rem 1rem 1rem;
+  text-align: center;
+}
+
+.site-header .badge-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.site-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(1.6rem, 6vw, 2.4rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-gold-light) 0%, var(--color-gold) 60%, #a07830 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+.site-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════
+   메인 카드
+══════════════════════════════════════════ */
+.main-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 1.5rem;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(201, 168, 76, 0.05);
+}
+
+/* ── 구분선 ── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* ══════════════════════════════════════════
+   업로드 영역
+══════════════════════════════════════════ */
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: 1.25rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(201, 168, 76, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--color-gold);
+  background: rgba(201, 168, 76, 0.07);
+  transform: translateY(-2px);
+}
+
+.upload-zone.error {
+  border-color: rgba(192, 57, 43, 0.6);
+  background: rgba(192, 57, 43, 0.05);
+}
+
+.upload-zone .upload-icon {
+  font-size: 3rem;
+  color: var(--color-gold);
+  margin-bottom: 0.75rem;
+  display: block;
+  line-height: 1;
+}
+
+.upload-zone .upload-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.05rem;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.upload-zone .upload-hint {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+/* ══════════════════════════════════════════
+   이미지 미리보기
+══════════════════════════════════════════ */
+#preview-wrap {
+  display: none;
+  margin-top: 1rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+
+#preview-img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
+}
+
+#preview-clear {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* ══════════════════════════════════════════
+   분석 버튼
+══════════════════════════════════════════ */
+.btn-analyze {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #b8963e 0%, var(--color-gold) 50%, #d4af5a 100%);
+  border: none;
+  color: #1a1205;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.3);
+}
+
+.btn-analyze:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(201, 168, 76, 0.45);
+}
+
+.btn-analyze:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ══════════════════════════════════════════
+   로딩 스피너
+══════════════════════════════════════════ */
+#loading-area {
+  display: none;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid rgba(201, 168, 76, 0.15);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 0.9rem;
+  color: var(--color-gold);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ══════════════════════════════════════════
+   결과 영역
+══════════════════════════════════════════ */
+#result-area {
+  display: none;
+  margin-top: 1.5rem;
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.score-ring-wrap {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.score-number {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 3.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  margin-top: 0.25rem;
+}
+
+.advice-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(201, 168, 76, 0.05);
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-left: 3px solid var(--color-gold);
+}
+
+.advice-item .advice-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.advice-text {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+/* ══════════════════════════════════════════
+   에러 메시지
+══════════════════════════════════════════ */
+#error-area {
+  display: none;
+  background: rgba(192, 57, 43, 0.1);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: #e74c3c;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ══════════════════════════════════════════
+   푸터
+══════════════════════════════════════════ */
+.site-footer {
+  text-align: center;
+  padding: 1.5rem 1rem 2rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.site-footer .fortune-tip {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--color-gold);
+}
