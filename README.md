@@ -1,1 +1,228 @@
-# fengshui-cam
+# 🏠 Lucky Room — AI 풍수지리 인테리어 테스트
+
+> 사진 한 장으로 보는 재미있는 풍수지리 분석! 📸✨
+
+[![PHP](https://img.shields.io/badge/PHP-8.x-777BB4?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?style=flat-square&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com/)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+
+---
+
+## 📖 프로젝트 소개
+
+**Lucky Room**은 최신 멀티모달 AI 기술을 활용한 퀵 프로젝트입니다.
+
+스마트폰으로 촬영한 방 사진을 업로드하면, OpenAI의 `gpt-4o` Vision 모델이 풍수지리 관점에서 인테리어를 분석하고 **풍수 점수**와 **맞춤 인테리어 조언**을 제공합니다.
+
+- 🎯 **타겟 사용자**: 인테리어에 관심 있고, 가벼운 운세/심리 테스트를 즐기는 모바일 웹 사용자
+- ⚡ **개발 철학**: 복잡한 설정 없이, 단일 파일로 당일 MVP 완성
+
+---
+
+## ✨ 주요 기능
+
+| 기능 | 설명 |
+|------|------|
+| 📷 **이미지 업로드** | 카메라 촬영 또는 갤러리 선택 (드래그 앤 드롭 지원) |
+| 🔍 **AI 풍수 분석** | GPT-4o Vision으로 방 사진 분석 (약 3~5초) |
+| 🏆 **점수 출력** | 100점 만점의 풍수 점수 (카운트업 애니메이션) |
+| 💡 **인테리어 조언** | 재물운/건강운 상승을 위한 구체적인 조언 2가지 |
+| ⚠️ **에러 처리** | 파일 크기/형식 검증, API 오류 시 친절한 안내 메시지 |
+| ⏳ **로딩 UI** | 분석 중 스피너 + 순환 메시지 표시 (중복 요청 방지) |
+
+---
+
+## 🛠️ 기술 스택
+
+- **Frontend**: HTML5, Vanilla JavaScript, Bootstrap 5
+- **Backend**: PHP 8.x (단일 `index.php` — 뷰와 서버 로직 통합)
+- **AI API**: OpenAI API (`gpt-4o` Vision)
+- **통신**: PHP `cURL`을 이용한 REST API 호출
+
+---
+
+## 🗂️ 프로젝트 구조
+
+```
+lucky-room/
+├── index.php          # 메인 애플리케이션 (뷰 + 서버 로직)
+├── .env               # 환경 변수 (API 키) ← Git 제외
+├── .env.example       # 환경 변수 예시 파일
+├── .gitignore         # Git 제외 목록
+├── .htaccess          # Apache 설정
+└── docs/
+    ├── PRD.md         # 제품 요구사항 정의서
+    └── CHECKLIST.md   # 개발 체크리스트
+```
+
+---
+
+## 🚀 시작하기
+
+### 1. 사전 요구사항
+
+- PHP 8.x 이상
+- Apache 웹 서버 (cURL 확장 활성화 필수)
+- OpenAI API 키
+
+```bash
+# cURL 확장 활성화 확인
+php -m | grep curl
+```
+
+### 2. 설치
+
+```bash
+# 저장소 클론
+git clone https://github.com/your-username/lucky-room.git
+cd lucky-room
+```
+
+### 3. 환경 변수 설정
+
+```bash
+# .env 파일 생성
+cp .env.example .env
+```
+
+`.env` 파일을 열고 OpenAI API 키를 입력하세요:
+
+```env
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+> [!CAUTION]
+> `.env` 파일은 절대 Git에 커밋하지 마세요! `.gitignore`에 이미 포함되어 있습니다.
+
+### 4. 웹 서버 설정
+
+Apache DocumentRoot를 프로젝트 디렉토리로 설정하거나, 가상 호스트를 구성하세요.
+
+```bash
+# 예시: DocumentRoot를 /var/www/html/lucky-room 으로 설정 후 접속
+http://localhost/
+```
+
+---
+
+## 🔄 사용자 플로우
+
+```
+1. 메인 웹페이지 접속
+       ↓
+2. '사진 업로드' 영역 터치 → 카메라 촬영 또는 사진 선택
+       ↓
+3. 파일 크기(5MB 이하) 및 형식 자동 검사
+  ├─ 실패 → 안내 메시지 출력 후 중단
+  └─ 성공 ↓
+4. '운기 분석 시작하기' 버튼 클릭
+       ↓
+5. 로딩 스피너 + "AI가 기운을 살피는 중입니다..." 메시지 표시
+       ↓
+6. 분석 완료 → 화면 하단에 결과(점수 + 조언) 출력
+  └─ 실패 → 에러 메시지 표시 + 버튼 재활성화
+```
+
+---
+
+## 🏗️ 시스템 아키텍처
+
+```
+[Client (Mobile/PC 브라우저)]
+   |
+   | ① 파일 크기/형식 유효성 검사 (Client Side)
+   | ② Multipart Form 전송 (이미지)
+   ↓
+[Web Server (PHP — index.php)]
+   |
+   | ③ 이미지 Base64 인코딩
+   | ④ JSON Payload 생성 (프롬프트 + 이미지 데이터)
+   | ⑤ cURL 통신 / HTTPS
+   ↓
+[OpenAI API Server (gpt-4o)]
+   |
+   | ⑥ 이미지 분석 및 결과 JSON 반환
+   ↓
+[Web Server (PHP — index.php)]
+   |
+   | ⑦ JSON 디코딩 및 HTML 렌더링
+   | ⑧ API 오류 발생 시 에러 처리
+   ↓
+[Client (결과 화면 확인)]
+```
+
+---
+
+## 📦 AI 응답 형식
+
+AI는 항상 다음 JSON 형식으로 응답합니다:
+
+```json
+{
+  "score": 85,
+  "advice": [
+    "동쪽 창가에 화분을 놓으면 재물운이 상승합니다.",
+    "침대 머리 방향을 북쪽으로 바꾸면 숙면과 건강운에 도움이 됩니다."
+  ]
+}
+```
+
+---
+
+## 🔐 보안 고려사항
+
+- **API 키**: `.env` 파일로 분리 관리, 소스 코드에 하드코딩 절대 금지
+- **파일 검증**: 클라이언트 및 서버 양쪽에서 이중 검증 수행
+- **업로드 제한**: 파일 크기 최대 5MB, 이미지 형식만 허용
+
+---
+
+## 🗺️ 로드맵
+
+### ✅ Phase 1 — MVP (완료)
+- [x] 단일 PHP 파일 기반 구현
+- [x] 모바일 최적화 UI (Bootstrap 5 + 다크 테마)
+- [x] 클라이언트/서버 이중 파일 유효성 검사
+- [x] 로딩 UI (스피너 + 순환 메시지)
+- [x] 풍수 점수 카운트업 애니메이션
+- [x] 에러 처리 및 사용자 피드백
+
+### 🔲 Phase 2 — 고도화 (예정)
+- [ ] 분석 결과 DB 저장 ('나만의 기록' 생성)
+- [ ] 카카오톡 / URL 공유 기능
+- [ ] AWS S3 이미지 스토리지 연동
+- [ ] IP 기반 Rate Limiting 구현
+
+---
+
+## 📄 문서
+
+| 문서 | 설명 |
+|------|------|
+| [PRD.md](docs/PRD.md) | 제품 요구사항 정의서 |
+| [CHECKLIST.md](docs/CHECKLIST.md) | 개발 체크리스트 |
+
+---
+
+## 🤝 기여하기
+
+1. 이 저장소를 Fork 하세요
+2. Feature 브랜치를 생성하세요 (`git checkout -b feature/amazing-feature`)
+3. 변경사항을 커밋하세요 (`git commit -m 'Add amazing feature'`)
+4. 브랜치에 Push 하세요 (`git push origin feature/amazing-feature`)
+5. Pull Request를 열어주세요
+
+---
+
+## 📜 라이선스
+
+이 프로젝트는 MIT 라이선스를 따릅니다.
+
+---
+
+<div align="center">
+  
+  Made with ❤️ and ☕ | Powered by OpenAI GPT-4o
+
+</div>
