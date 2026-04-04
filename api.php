@@ -15,12 +15,14 @@ header('Content-Type: application/json; charset=utf-8');
 // ── 1. .env 파일에서 환경 변수 로드
 function loadEnv(string $path): array
 {
-  if (!file_exists($path)) return [];
+  if (!file_exists($path))
+    return [];
 
   $env = [];
   $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
   foreach ($lines as $line) {
-    if (strpos(trim($line), '#') === 0) continue;
+    if (strpos(trim($line), '#') === 0)
+      continue;
     if (strpos($line, '=') !== false) {
       [$k, $v] = explode('=', $line, 2);
       $env[trim($k)] = trim($v);
@@ -40,8 +42,8 @@ function validateUpload(array $files): ?string
     return '이미지 업로드에 실패했습니다. 다시 시도해주세요. (에러코드: ' . $errCode . ')';
   }
 
-  $file    = $files['room_image'];
-  $mime    = mime_content_type($file['tmp_name']);
+  $file = $files['room_image'];
+  $mime = mime_content_type($file['tmp_name']);
   $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
   if (!in_array($mime, $allowed)) {
@@ -60,17 +62,17 @@ function callOpenAI(string $apiKey, array $payload): array
   $ch = curl_init('https://api.openai.com/v1/chat/completions');
   curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => json_encode($payload),
-    CURLOPT_HTTPHEADER     => [
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => json_encode($payload),
+    CURLOPT_HTTPHEADER => [
       'Content-Type: application/json',
       'Authorization: Bearer ' . $apiKey,
     ],
-    CURLOPT_TIMEOUT        => 30,
+    CURLOPT_TIMEOUT => 30,
     CURLOPT_CONNECTTIMEOUT => 10,
   ]);
 
-  $response  = curl_exec($ch);
+  $response = curl_exec($ch);
   $curlError = curl_error($ch);
   curl_close($ch);
 
@@ -105,7 +107,7 @@ function parseAIContent(string $content): array
   }
 
   return [
-    'score'  => max(0, min(100, (int) $result['score'])),
+    'score' => max(0, min(100, (int) $result['score'])),
     'advice' => array_slice(array_values($result['advice']), 0, 2),
   ];
 }
@@ -115,7 +117,7 @@ function parseAIContent(string $content): array
 // ══════════════════════════════════════════
 
 // API 키 로드
-$env    = loadEnv(__DIR__ . '/.env');
+$env = loadEnv(__DIR__ . '/.env');
 $apiKey = $env['OPENAI_API_KEY'] ?? '';
 
 if (empty($apiKey)) {
@@ -131,10 +133,10 @@ if ($uploadError !== null) {
 }
 
 // 이미지 Base64 인코딩
-$file    = $_FILES['room_image'];
+$file = $_FILES['room_image'];
 $tmpPath = $file['tmp_name'];
-$mime    = mime_content_type($tmpPath);
-$base64  = base64_encode(file_get_contents($tmpPath));
+$mime = mime_content_type($tmpPath);
+$base64 = base64_encode(file_get_contents($tmpPath));
 $dataUrl = "data:{$mime};base64,{$base64}";
 
 // OpenAI API Payload 생성
@@ -161,15 +163,15 @@ $systemPrompt =
   '예외: {"score": 0, "advice": ["풍수지리 분석이 어려운 사진입니다. (이유)", "방 전체가 잘 보이는 실내 사진을 올려주시면 정확한 분석이 가능합니다."]}';
 
 $payload = [
-  'model'      => 'gpt-4o',
-  'max_tokens' => 2000,
-  'messages'   => [
+  'model' => 'gpt-4o',
+  'max_tokens' => 4096,
+  'messages' => [
     ['role' => 'system', 'content' => $systemPrompt],
     [
-      'role'    => 'user',
+      'role' => 'user',
       'content' => [
         [
-          'type'      => 'image_url',
+          'type' => 'image_url',
           'image_url' => ['url' => $dataUrl, 'detail' => 'low'],
         ],
         [
