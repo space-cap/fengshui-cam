@@ -192,6 +192,70 @@ Forwarding  https://abcd-1234.ngrok-free.app → http://localhost:80
 
 ---
 
+### 방법 C. Cloudflare Tunnel (안정적·무료·HTTPS 자동)
+
+계정 가입 없이도 사용할 수 있는 **`cloudflared`** 임시 터널 기능을 활용합니다.
+ngrok과 달리 **별도 인증 없이 즉시 사용** 가능하고, Cloudflare CDN을 통해 안정적입니다.
+
+**① cloudflared 설치**
+
+```bash
+# WSL (Ubuntu/Debian)
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+
+# Windows (Winget)
+winget install --id Cloudflare.cloudflared
+
+# Windows (Chocolatey)
+choco install cloudflared
+
+# 설치 확인
+cloudflared --version
+```
+
+**② 임시 터널 시작 (로그인 불필요)**
+
+```bash
+cloudflared tunnel --url http://localhost:80
+```
+
+**③ 출력된 URL로 폰에서 접속**
+
+```
++--------------------------------------------------------------------------------------------+
+|  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable): |
+|  https://random-words-1234.trycloudflare.com                                              |
++--------------------------------------------------------------------------------------------+
+
+# 위 URL을 폰 브라우저에 입력 또는 QR코드로 공유
+```
+
+> [!NOTE]
+> 임시 터널(`trycloudflare.com`)은 **로그인 없이 무료**로 사용 가능합니다. 터널을 시작할 때마다 URL이 새로 발급됩니다.
+
+> [!TIP]
+> **고정 URL이 필요하다면?** Cloudflare 계정에 로그인 후 Named Tunnel을 생성하면 항상 같은 도메인을 사용할 수 있습니다. (무료 플랜 지원)
+
+> [!WARNING]
+> 터널이 열려 있는 동안 누구나 URL로 접속 가능합니다. 테스트가 끝나면 반드시 `Ctrl + C`로 종료하세요.
+
+---
+
+### 📊 방법 비교
+
+| | 방법 A (Wi-Fi) | 방법 B (ngrok) | 방법 C (Cloudflare) |
+|---|---|---|---|
+| **네트워크 조건** | 같은 Wi-Fi 필수 | 인터넷 가능 | 인터넷 가능 |
+| **설정 난이도** | ⭐ 쉬움 | ⭐⭐ 보통 | ⭐ 쉬움 |
+| **계정 필요** | ❌ 불필요 | ✅ 필요 | ❌ 불필요 (임시 터널) |
+| **HTTPS** | ❌ | ✅ | ✅ |
+| **속도** | 🚀 빠름 | 🟡 보통 | 🚀 빠름 |
+| **URL 고정** | 🟡 IP 고정 시 가능 | ❌ 매번 변경 | ❌ 매번 변경 (임시) |
+| **추천 상황** | 혼자 빠른 테스트 | 팀원과 공유 | 팀원과 공유 |
+
+---
+
 ## 🔄 사용자 플로우
 
 ```
