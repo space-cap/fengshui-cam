@@ -9,6 +9,11 @@
 
 ---
 
+<img width="779" height="1505" alt="localhost_index php" src="https://github.com/user-attachments/assets/43008889-dbfc-459e-99b6-4cca5473803a" />
+
+
+---
+
 ## 📖 프로젝트 소개
 
 **Lucky Room**은 최신 멀티모달 AI 기술을 활용한 퀵 프로젝트입니다.
