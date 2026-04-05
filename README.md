@@ -58,7 +58,7 @@ lucky-room/
 ├── data/              # 런타임 데이터 (Rate Limiting JSON 등 저장)
 │   └── .htaccess      # 데이터 폴더 접근 통제용 보안 파일
 ├── .env               # 환경 변수 (API 키 및 Daily Rate Limit 설정) ← Git 제외
-├── .env.example       # 환경 변수 예시 파일
+├── .env.sample        # 환경 변수 예시 파일
 ├── .gitignore         # Git 제외 목록
 ├── .htaccess          # 루트 디렉토리 Apache 설정
 └── docs/
@@ -93,7 +93,7 @@ cd lucky-room
 
 ```bash
 # .env 파일 생성
-cp .env.example .env
+cp .env.sample .env
 ```
 
 `.env` 파일을 열고 OpenAI API 키를 입력하세요:
@@ -340,7 +340,7 @@ AI는 항상 다음 JSON 형식으로 응답합니다:
 - [ ] 분석 결과 DB 저장 ('나만의 기록' 생성)
 - [ ] 카카오톡 / URL 공유 기능
 - [ ] AWS S3 이미지 스토리지 연동
-- [ ] IP 기반 Rate Limiting 구현
+- [x] IP 기반 Rate Limiting 구현
 
 ---
 
